@@ -1,1 +1,5 @@
-# comp412-lab2
+
+Miles Sigel
+mgs6
+Miles Sigel, mgs6
+<Miles Sigel, mgs6>
