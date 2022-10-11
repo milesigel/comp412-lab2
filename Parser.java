@@ -1,5 +1,6 @@
 import intermediate_representation.IRList;
 import intermediate_representation.IRNode;
+import intermediate_representation.IRStoreNode;
 import pairs.Pair;
 
 public class Parser {
@@ -98,7 +99,7 @@ public class Parser {
     }
 
     private void finishNOP() {
-        IRNode newNode = new IRNode(this.lineNumber, 4);
+        IRNode newNode = new IRNode(this.lineNumber, 4, word.lexeme);
         word = scanner.getNextWord();
         if (word.token == 10) {
             // eol
@@ -110,11 +111,11 @@ public class Parser {
     }
 
     private void finishOUTPUT() {
-        IRNode newNode = new IRNode(this.lineNumber, 3);
+        IRNode newNode = new IRNode(this.lineNumber, 3, word.lexeme);
         word = scanner.getNextWord();
         if (word.token == 5) {
             // constant
-            newNode.setSourceRegister(1, Integer.parseInt(word.lexeme));
+            newNode.setSourceRegister(0, Integer.parseInt(word.lexeme));
             word = scanner.getNextWord();
             if (word.token == 10) {
                 // eol
@@ -130,12 +131,12 @@ public class Parser {
     }
 
     private void finishARITHOP() {
-        IRNode newNode = new IRNode(this.lineNumber, 2);
+        IRNode newNode = new IRNode(this.lineNumber, 2, word.lexeme);
         String lexeme = word.lexeme;
         word = scanner.getNextWord();
         if (word.token == 11) {
             // register
-            newNode.setSourceRegister(1, Integer.parseInt(word.lexeme));
+            newNode.setSourceRegister(0, Integer.parseInt(word.lexeme));
             checkAndSetMaxSR(Integer.parseInt(word.lexeme));
             word = scanner.getNextWord();
             if (word.token == 7) {
@@ -143,7 +144,7 @@ public class Parser {
                 word = scanner.getNextWord();
                 if (word.token == 11) {
                     // register
-                    newNode.setSourceRegister(2, Integer.parseInt(word.lexeme));
+                    newNode.setSourceRegister(1, Integer.parseInt(word.lexeme));
                     checkAndSetMaxSR(Integer.parseInt(word.lexeme));
                     word = scanner.getNextWord();
                     if (word.token == 8) {
@@ -151,7 +152,7 @@ public class Parser {
                         word = scanner.getNextWord();
                         if (word.token == 11) {
                             // register
-                            newNode.setSourceRegister(3, Integer.parseInt(word.lexeme));
+                            newNode.setSourceRegister(2, Integer.parseInt(word.lexeme));
                             checkAndSetMaxSR(Integer.parseInt(word.lexeme));
                             word = scanner.getNextWord();
                             if (word.token == 10) {
@@ -181,17 +182,22 @@ public class Parser {
 
 
     private void finishMEMOP() {
-        IRNode newNode = new IRNode(this.lineNumber, 0);
+        IRNode newNode;
+        if (word.lexeme == "store") {
+            newNode = new IRStoreNode(this.lineNumber, 0);
+        } else {
+            newNode = new IRNode(this.lineNumber, 0, word.lexeme);
+        }
         String lexeme = word.lexeme;
         word = scanner.getNextWord();
         if (word.token == 11) {
-            newNode.setSourceRegister(1, Integer.parseInt(word.lexeme));
+            newNode.setSourceRegister(0, Integer.parseInt(word.lexeme));
             checkAndSetMaxSR(Integer.parseInt(word.lexeme));
             word = scanner.getNextWord();
             if (word.token == 8) {
                 word = scanner.getNextWord();
                 if (word.token == 11) {
-                    newNode.setSourceRegister(2, Integer.parseInt(word.lexeme));
+                    newNode.setSourceRegister(1, Integer.parseInt(word.lexeme));
                     checkAndSetMaxSR(Integer.parseInt(word.lexeme));
                     word = scanner.getNextWord();
                     if (word.token == 10) {
@@ -213,18 +219,18 @@ public class Parser {
     
     private void finishLOADI() {
         // start with loadI
-        IRNode newNode = new IRNode(this.lineNumber, 1);
+        IRNode newNode = new IRNode(this.lineNumber, 1, word.lexeme);
         word = scanner.getNextWord();
         if (word.token == 5) {
             // constant
-            newNode.setSourceRegister(1, Integer.parseInt(word.lexeme));
+            newNode.setSourceRegister(0, Integer.parseInt(word.lexeme));
             word = scanner.getNextWord();
             if (word.token == 8) {
                 // into
                 word = scanner.getNextWord();
                 if (word.token == 11) {
                     // register
-                    newNode.setSourceRegister(2, Integer.parseInt(word.lexeme));
+                    newNode.setSourceRegister(1, Integer.parseInt(word.lexeme));
                     checkAndSetMaxSR(Integer.parseInt(word.lexeme));
                     word = scanner.getNextWord();
                     if (word.token == 10) {

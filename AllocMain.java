@@ -79,7 +79,7 @@ public class AllocMain {
                 IRList representation = parser.getIR();
                 Renamer renamer = new Renamer(representation, parser.getMaxSR());
                 renamer.addVirtualRegisters();
-
+                System.out.println(representation.getILoc());
             } else {
                 // there was an error in the parse
             }

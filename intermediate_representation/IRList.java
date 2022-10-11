@@ -19,8 +19,8 @@ public class IRList {
         tokenConversion[9] = "EOF";
         tokenConversion[10] = "EOL";
         tokenConversion[11] = "REG";
-        head = new IRNode(-1,-1);
-        tail = new IRNode(-1, -1);
+        head = new IRNode(-1,-1, "");
+        tail = new IRNode(-1, -1, "");
         head.setNext(tail);
         tail.setPrev(head);
 
@@ -46,6 +46,16 @@ public class IRList {
         IRNode currNode = head.getNext();
         while(currNode != tail && currNode != null) {
             toReturn += currNode.toString() + "\n";
+            currNode = currNode.getNext();
+        }
+        return toReturn;
+    }
+
+    public String getILoc() {
+        String toReturn = "";
+        IRNode currNode = head.getNext();
+        while(currNode != tail && currNode != null) {
+            toReturn += currNode.getILOCRepresentation() + "\n";
             currNode = currNode.getNext();
         }
         return toReturn;
