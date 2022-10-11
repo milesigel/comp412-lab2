@@ -178,6 +178,10 @@ public class Renamer {
         }
     }
 
+    public int getVrName() {
+        return this.vrName;
+    }
+
 
     private void handleUse() {
         LU[this.regVal] = workingNode.getLineNum();

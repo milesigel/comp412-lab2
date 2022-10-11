@@ -36,12 +36,30 @@ public class AllocMain {
         if (retVal == 0) {
             System.out.println("The parser successfully parsed the file " + file_name);
         } else {
-            System.out.println("The parser encountered " + retVal + " errors while parsing the file " + file_name);
+            System.err.println("The parser encountered " + retVal + " errors while parsing the file " + file_name);
         }
     }
 
     private static void printFileNotFoundError(String fileName) {
         System.err.println("There was an error opening the file : " + fileName);
+    }
+
+    private IRList getIR(String filePath) throws IOException {
+        Scanner scan = new Scanner(filePath);
+        if (scan.openFile() == 0) {
+            printFileNotFoundError(filePath);
+            printCommandHelp();
+            return null;
+        }
+        Parser parser = new Parser(scan);
+        int retVal = parser.parse();
+        if (retVal == 0) {
+            // the parse was successful and we can get the IR from the parser
+            return parser.getIR();
+        } else {
+            printRetVal(retVal, filePath);
+            return null;
+        }
     }
 
 
@@ -57,23 +75,26 @@ public class AllocMain {
      * - k ---> k is the number of registers available to the allocator (3 ≤ k ≤ 64) and <name> is a Linux pathname to
      *          the file containing the input block
      */
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         if (args.length != 2) {
             printCommandHelp();
             return;
         }
         String command = args[0];
         String filePath = args[1];
+        Scanner scan;
+        Parser parser;
+        int retVal;
         if (command.equals("-x")) {
             // ~comp412/students/lab2/code_check_1/ are where thr test files are found
-            Scanner scan = new Scanner(filePath);
+            scan = new Scanner(filePath);
             if (scan.openFile() == 0) {
                 printFileNotFoundError(filePath);
                 printCommandHelp();
                 return;
             }
-            Parser parser = new Parser(scan);
-            int retVal = parser.parse();
+            parser = new Parser(scan);
+            retVal = parser.parse();
             if (retVal == 0) {
                 // the parse was successful and we can get the IR from the parser
                 IRList representation = parser.getIR();
@@ -82,13 +103,42 @@ public class AllocMain {
                 System.out.println(representation.getILoc());
             } else {
                 // there was an error in the parse
+                printRetVal(retVal, filePath);
             }
 
-
-        } else if (command.equals("-k")) {
-
         } else {
-            printCommandHelp();
+            try {
+                int numRegisters = Integer.parseInt(command);
+                if (numRegisters < 3 || numRegisters > 64) {
+                    System.err.println("ERROR: Passed k value outside of range. Must be between [3, 64] \n");
+                    printCommandHelp();
+                    return;
+                }
+                scan = new Scanner(filePath);
+                if (scan.openFile() == 0) {
+                    printFileNotFoundError(filePath);
+                    printCommandHelp();
+                    return;
+                }
+                parser = new Parser(scan);
+                retVal = parser.parse();
+                if (retVal == 0) {
+                    // the parse was successful and we can get the IR from the parser
+                    IRList representation = parser.getIR();
+                    Renamer renamer = new Renamer(representation, parser.getMaxSR());
+                    renamer.addVirtualRegisters();
+                    Allocator allocator = new Allocator(numRegisters, representation, renamer.getVrName());
+                } else {
+                    // there was an error in the parse
+                    printRetVal(retVal, filePath);
+                    return;
+                }
+
+            } catch (NumberFormatException e) {
+                System.err.println("There was an error processing \"k\" : the number of registers to allocate \n");
+                printCommandHelp();
+                return;
+            }
         }
     }
 }

@@ -31,7 +31,7 @@ public class Scanner {
     private String lexeme;
 
 
-    public Scanner(String file_name) throws IOException {
+    public Scanner(String file_name) {
         this.fileName = file_name;
         // stuff about construction
     }
