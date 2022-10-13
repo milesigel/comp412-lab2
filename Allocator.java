@@ -27,8 +27,10 @@ public class Allocator {
     private int[] PRtoNU;
     private Stack<Integer> registerStack;
     private IRNode workingNode;
+    private int reservedSpillRegister;
 
     public Allocator(int numRegisters, IRList renamedCode, int vrName, int maxLive) {
+        this.reservedSpillRegister = numRegisters-1;
         this.numRegisters = numRegisters;
         this.renamedCode = renamedCode;
         this.maxLive = maxLive;
@@ -47,7 +49,7 @@ public class Allocator {
             registerStack.push(i);
         }
         if (maxLive <= numRegisters) {
-            registerStack.push(numRegisters-1); // add the last one to the stack if maxlive is less than or equal
+            registerStack.push(reservedSpillRegister); // add the last one to the stack if maxlive is less than or equal
         }
     }
 
@@ -62,6 +64,25 @@ public class Allocator {
         registerStack.push(pr);
     }
 
+
+    /**
+     * Restores a virtual register into a physical register
+     * @param virtualRegister
+     */
+    private void restore(int virtualRegister, int physicalRegister) {
+        // implement
+        IRNode loadI = new IRNode(Integer.MAX_VALUE, LOADI, "loadI");
+        loadI.setSourceRegister(0, VRtoSpillLoc[virtualRegister]);
+        loadI.setPhysicalRegister(1, reservedSpillRegister);
+
+        insertAboveWorkingNode(loadI);
+
+        IRNode load = new IRNode(Integer.MAX_VALUE, LOADI, "load");
+        load.setPhysicalRegister(0, reservedSpillRegister);
+        load.setPhysicalRegister(1, physicalRegister);
+
+        insertAboveWorkingNode(load);
+    }
     /**
      * Gets a new physical register for an operation
      * @return the PR that will be inside of an operation
@@ -72,7 +93,7 @@ public class Allocator {
             reg = registerStack.pop();
         } else {
             // find register to spill (preferably the one with the highest next use value
-            reg = spill();
+            reg = spill(virtualRegister);
         }
         VRtoPR[virtualRegister] = reg;
         PRtoVR[reg] = virtualRegister;
@@ -80,7 +101,8 @@ public class Allocator {
         return reg;
     }
 
-    private int spill() {
+    private int spill(int virtualRegister) {
+        int currentSpillAddress;
         int spillReg = 0;
         int highestNU = 0;
         for (int i = 0; i < numRegisters; i++) {
@@ -93,23 +115,25 @@ public class Allocator {
                 }
             }
         }
-        IRNode loadI = new IRNode(Integer.MAX_VALUE, LOADI, "loadI");
-        loadI.setSourceRegister(0, spillLocation);
-        loadI.setPhysicalRegister(1, numRegisters-1);
 
-        loadI.setNext(workingNode);
-        loadI.setPrev(workingNode.getPrev());
-        workingNode.getPrev().setNext(loadI);
-        workingNode.setPrev(loadI);
+        if (VRtoSpillLoc[virtualRegister] == INVALID) {
+            currentSpillAddress = spillLocation;
+            spillLocation += 4;
+        } else {
+            currentSpillAddress = VRtoSpillLoc[virtualRegister];
+        }
+
+        IRNode loadI = new IRNode(Integer.MAX_VALUE, LOADI, "loadI");
+        loadI.setSourceRegister(0, currentSpillAddress);
+        loadI.setPhysicalRegister(1, reservedSpillRegister);
+
+        insertAboveWorkingNode(loadI);
 
         IRNode store = new IRNode(Integer.MAX_VALUE, MEMOP, "store");
         store.setPhysicalRegister(0, spillReg);
-        store.setPhysicalRegister(1, spillLocation);
+        store.setPhysicalRegister(1, reservedSpillRegister);
 
-        store.setNext(workingNode);
-        store.setPrev(workingNode.getPrev());
-        workingNode.getPrev().setNext(store);
-        workingNode.setPrev(store);
+        insertAboveWorkingNode(store);
 
         return spillReg;
 
@@ -131,21 +155,19 @@ public class Allocator {
                 case ARITHOP: { // (add, sub, mult, lshift, rshift)
                     handleARITHOP();
                 }
-                case OUTPUT: {
-                    handleOUTPUT();
-                }
             }
             workingNode = workingNode.getNext();
         }
     }
 
-    private void handleOUTPUT() {
-    }
 
     private void handleARITHOP() {
+        handleUses(List.of(0, 1));
+        handleDef(List.of(2));
     }
 
     private void handleLOADI() {
+        handleDef(List.of(1));
     }
 
     private void clearMarks() {
@@ -154,8 +176,10 @@ public class Allocator {
 
     private void handleMEMOP() {
 
-        if (workingNode.getLexeme() == "store") {
-            handleUses(List.of(1,2));
+        if (workingNode.getLexeme().equals("store")) {
+            handleUses(List.of(0,1));
+        } else { // load
+            handleUses(List.of(1));
         }
 
     }
@@ -166,8 +190,31 @@ public class Allocator {
             pr = VRtoPR[workingNode.getVirtualRegister(i)];
             if (pr == INVALID) {
                 workingNode.setPhysicalRegister(i, getAPR(workingNode.getVirtualRegister(i), workingNode.getnextUse(i)));
+                restore(workingNode.getVirtualRegister(i), workingNode.getPhysicalRegister(i));
+            } else {
+                workingNode.setPhysicalRegister(i, pr);
+            }
+            marks = workingNode.getPhysicalRegister(i);
+        }
+        for (int i: uses) {
+            if (workingNode.getnextUse(i) == INVALID && PRtoVR[workingNode.getPhysicalRegister(i)] != INVALID) {
+                freeAPR(workingNode.getPhysicalRegister(i));
             }
         }
+    }
+
+
+    private void handleDef(List<Integer> defs) {
+        for (int i: defs) {
+            workingNode.setPhysicalRegister(workingNode.getVirtualRegister(i), workingNode.getnextUse(i));
+        }
+    }
+
+    private void insertAboveWorkingNode(IRNode node) {
+        node.setNext(workingNode);
+        node.setPrev(workingNode.getPrev());
+        workingNode.getPrev().setNext(node);
+        workingNode.setPrev(node);
     }
 
 

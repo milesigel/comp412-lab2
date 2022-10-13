@@ -144,4 +144,8 @@ public class IRNode {
     public int getnextUse(int operand) {
         return this.operandArray[(4 * operand) + 3];
     }
+
+    public int getPhysicalRegister(int i) {
+        return this.operandArray[(4 * i) + 2];
+    }
 }
