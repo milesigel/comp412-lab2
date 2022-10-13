@@ -127,7 +127,7 @@ public class AllocMain {
                     IRList representation = parser.getIR();
                     Renamer renamer = new Renamer(representation, parser.getMaxSR());
                     renamer.addVirtualRegisters();
-                    Allocator allocator = new Allocator(numRegisters, representation, renamer.getVrName());
+                    Allocator allocator = new Allocator(numRegisters, representation, renamer.getVrName(), renamer.getMaxLive());
                 } else {
                     // there was an error in the parse
                     printRetVal(retVal, filePath);

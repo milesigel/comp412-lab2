@@ -4,23 +4,38 @@ package intermediate_representation;
 import pairs.Pair;
 
 import java.util.Arrays;
+import java.util.List;
 
 public class IRNode {
 
     private IRNode next;
     private IRNode prev;
     private int lineNum;
+    private static final int USE = 1;
+    private static final int DEF = 2;
     private int opCode;
     private String lexeme;
     private int operandArray[];
+    private int[] useDef;
     public IRNode (int lineNum, int opCode, String lexeme) {
         this.lineNum = lineNum;
         this.opCode = opCode;
         this.operandArray = new int[12];
         this.lexeme = lexeme;
         Arrays.setAll(operandArray, i -> -1);
-
+        this.useDef = new int[3];
+        Arrays.setAll(useDef, i -> -1);
     }
+
+    public void setUse(int operandNum) {
+        // set the use
+        this.useDef[operandNum] = USE;
+    }
+
+    public void setDef(int operandNum) {
+        this.useDef[operandNum] = DEF;
+    }
+
 
     public IRNode getPrev() {
         return prev;
@@ -81,7 +96,7 @@ public class IRNode {
         this.operandArray[position] = value;
     }
 
-    private int getVirtualRegister(int operandNum) {
+    public int getVirtualRegister(int operandNum) {
         return this.operandArray[(operandNum * 4) + 1];
     }
 
@@ -120,5 +135,13 @@ public class IRNode {
 
     public String getLexeme() {
         return this.lexeme;
+    }
+
+    public void setPhysicalRegister(int operand, int physicalReg) {
+        this.operandArray[(4 * operand) + 2] = physicalReg;
+    }
+
+    public int getnextUse(int operand) {
+        return this.operandArray[(4 * operand) + 3];
     }
 }

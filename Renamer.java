@@ -25,6 +25,8 @@ public class Renamer {
     private int SRtoVR[];
     private int LU[];
     private int regVal;
+    private int maxLive;
+    private int currentlyLive;
 
 
     private IRNode workingNode;
@@ -46,6 +48,8 @@ public class Renamer {
             this.SRtoVR[i] = -1;
             this.LU[i] = -1;
         }
+        maxLive = 0;
+        currentlyLive = 0;
 
     }
 
@@ -58,9 +62,6 @@ public class Renamer {
         }
     }
 
-    public void handleStore() {
-
-    }
 
     private void handleNode2() {
         int numOps = 3;
@@ -71,31 +72,13 @@ public class Renamer {
                 continue;
             }
             if (workingNode.getOpCode() == 0 && i == 1 && !(workingNode instanceof IRStoreNode)) {
-                if (SRtoVR[regVal] == -1){
-                    SRtoVR[regVal] = vrName;
-                    vrName++;
-                }
-                workingNode.setVirtualRegister(i, SRtoVR[regVal]);
-                workingNode.setNextUseRegister(i, LU[regVal]);
-                handleDef();
+                handleNewDef(i);
             }
             else if (workingNode.getOpCode() == 2 && i == 2) {
-                if (SRtoVR[regVal] == -1){
-                    SRtoVR[regVal] = vrName;
-                    vrName++;
-                }
-                workingNode.setVirtualRegister(i, SRtoVR[regVal]);
-                workingNode.setNextUseRegister(i, LU[regVal]);
-                handleDef();
+                handleNewDef(i);
             }
             else if (workingNode.getOpCode() == 1 && i == 1) {
-                if (SRtoVR[regVal] == -1){
-                    SRtoVR[regVal] = vrName;
-                    vrName++;
-                }
-                workingNode.setVirtualRegister(i, SRtoVR[regVal]);
-                workingNode.setNextUseRegister(i, LU[regVal]);
-                handleDef();
+                handleNewDef(i);
             }
         }
 
@@ -106,80 +89,51 @@ public class Renamer {
             }
             if (workingNode.getOpCode() == 0) {
                 if (workingNode instanceof IRStoreNode) {
-                    if (SRtoVR[regVal] == -1){
-                        SRtoVR[regVal] = vrName;
-                        vrName++;
-                    }
-                    workingNode.setVirtualRegister(i, SRtoVR[regVal]);
-                    workingNode.setNextUseRegister(i, LU[regVal]);
-                    handleUse();
+                    handleNewUse(i);
                 } else if (i == 0) {
-                    if (SRtoVR[regVal] == -1) {
-                        SRtoVR[regVal] = vrName;
-                        vrName++;
-                    }
-                    workingNode.setVirtualRegister(i, SRtoVR[regVal]);
-                    workingNode.setNextUseRegister(i, LU[regVal]);
-                    handleUse();
+                    handleNewUse(i);
                 }
-
             }
             else if (workingNode.getOpCode() == 2 && i < 2) {
-                if (SRtoVR[regVal] == -1){
-                    SRtoVR[regVal] = vrName;
-                    vrName++;
-                }
-                workingNode.setVirtualRegister(i, SRtoVR[regVal]);
-                workingNode.setNextUseRegister(i, LU[regVal]);
-                handleUse();
+                handleNewUse(i);
             }
         }
 
     }
 
-    private void handleNode() {
-        int numOps = 2;
-        for (int i = numOps; i >= 0; i--) {
-            regVal = workingNode.getSourceRegister(i);
-            if (regVal > maxSR || regVal < 0 || (i == 0 && (workingNode.getOpCode() == 3 || workingNode.getOpCode() == 1))) {
-                continue;
-            }
-            if (SRtoVR[regVal] == -1){
-                SRtoVR[regVal] = vrName;
-                vrName++;
-            }
-            workingNode.setVirtualRegister(i, SRtoVR[regVal]);
-            workingNode.setNextUseRegister(i, LU[regVal]);
+    private void handleNewDef(int i) {
+        if (SRtoVR[regVal] == -1){
+            SRtoVR[regVal] = vrName;
+            vrName++;
+        } else {
+            currentlyLive--;
+        }
+        workingNode.setVirtualRegister(i, SRtoVR[regVal]);
+        workingNode.setNextUseRegister(i, LU[regVal]);
+        handleDef();
+    }
 
-            if (workingNode.getOpCode() == 2) {
-                // arithop
-                if (i == 0) {
-                    handleUse();
-                } else {
-                    handleDef();
-                }
-            }
-            if (workingNode.getOpCode() == 0) {
-                if (workingNode instanceof IRStoreNode) {
-                    handleUse();
-                } else {
-                    if (i > 0) {
-                        handleDef();
-                    } else {
-                        handleUse();
-                    }
-                }
-            }
-            if (workingNode.getOpCode() == 1) {
-                if (i > 0) {
-                    handleDef();
-                }
+    private void handleNewUse(int i) {
+        if (SRtoVR[regVal] == -1){
+            SRtoVR[regVal] = vrName;
+            vrName++;
+            currentlyLive++;
+            if (currentlyLive > maxLive) {
+                maxLive = currentlyLive;
             }
         }
+        workingNode.setVirtualRegister(i, SRtoVR[regVal]);
+        workingNode.setNextUseRegister(i, LU[regVal]);
+        handleUse();
     }
+
 
     public int getVrName() {
         return this.vrName;
+    }
+
+    public int getMaxLive() {
+        return this.maxLive;
     }
 
 
@@ -188,7 +142,6 @@ public class Renamer {
     }
 
     private void handleDef() {
-
         SRtoVR[this.regVal] = -1;
         LU[this.regVal] = -1;
     }
