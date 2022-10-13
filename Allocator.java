@@ -175,13 +175,11 @@ public class Allocator {
     }
 
     private void handleMEMOP() {
-
         if (workingNode.getLexeme().equals("store")) {
             handleUses(List.of(0,1));
         } else { // load
             handleUses(List.of(1));
         }
-
     }
 
     private void handleUses(List<Integer> uses) {
