@@ -1,9 +1,7 @@
-// COMP 412, Rice University
-// ILOC Front End
-//
-// Just a long block to parse
-//
-//SIM INPUT -i 0 2 4
+// cc3.i: block for the lab 2 code check
+//        has multiple regions of 'high' demand
+// Fall 2016, COMP 412, Rice University
+//SIM INPUT: -i 0 2 4
 //OUTPUT: 50
 loadI 0	        => r100
 add   r100,r100	=> r0

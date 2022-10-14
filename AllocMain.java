@@ -128,6 +128,8 @@ public class AllocMain {
                     Renamer renamer = new Renamer(representation, parser.getMaxSR());
                     renamer.addVirtualRegisters();
                     Allocator allocator = new Allocator(numRegisters, representation, renamer.getVrName(), renamer.getMaxLive());
+                    allocator.allocate();
+                    System.out.print(representation.getPRCode());
                 } else {
                     // there was an error in the parse
                     printRetVal(retVal, filePath);

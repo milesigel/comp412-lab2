@@ -61,6 +61,16 @@ public class IRList {
         return toReturn;
     }
 
+    public String getPRCode() {
+        String toReturn = "";
+        IRNode currNode = head.getNext();
+        while(currNode != tail && currNode != null) {
+            toReturn += currNode.getPRrep() + "\n";
+            currNode = currNode.getNext();
+        }
+        return toReturn;
+    }
+
     public IRNode getHead() {
         return this.head;
     }

@@ -148,4 +148,20 @@ public class IRNode {
     public int getPhysicalRegister(int i) {
         return this.operandArray[(4 * i) + 2];
     }
+
+    public String getPRrep() {
+        if (this.opCode == 2) {
+            return this.lexeme + "  r" + this.getPhysicalRegister(0) + ", r"
+                    + this.getPhysicalRegister(1)
+                    + " => r" + this.getPhysicalRegister(2);
+        } else if (this.opCode == 1) {
+            return this.lexeme + " " + this.getSourceRegister(0) + " => r" + this.getPhysicalRegister(1);
+        } else if (this.opCode == 0) {
+            return this.lexeme + " r" + this.getPhysicalRegister(0) + " => r" + this.getPhysicalRegister(1);
+        } else if (this.opCode == 3){
+            return this.lexeme + " " + this.getSourceRegister(0);
+        } else {
+            return this.lexeme;
+        }
+    }
 }
